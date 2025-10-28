@@ -1,0 +1,19 @@
+
+Os arquivos do filesystem ficam na pasta \data
+
+Faça nessa ordem pra funcionar:
+
+1)
+C:\Users\Marcos\.platformio\penv\Scripts\platformio.exe run --target erase
+
+2)
+C:\Users\Marcos\.platformio\penv\Scripts\platformio.exe run --target upload
+
+3)
+C:\Users\Marcos\.platformio\penv\Scripts\platformio.exe run --target uploadfs
+
+
+Garanta que o platformio.ini tenha (o primeiro indica a bibliotca de filsystem que estamos usando o liltefs)
+(o segundo é a indicação do tamanho da flash, no nosso caso 4mb)
+board_build.filesystem = littlefs
+board_build.partitions = default.csv

@@ -1,0 +1,6 @@
+value
+100
+lampport
+2
+switchport
+4

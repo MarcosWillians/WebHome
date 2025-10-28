@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Automação ESP32 WebSocket</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #f0f0f0;
+    }
+    #btnContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+    }
+    .formInputDiv {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 15px;
+      gap: 10px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .formInputDiv label {
+      font-weight: bold;
+    }
+    .formInputDiv input {
+      padding: 8px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .formInputDiv button {
+      padding: 8px 15px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      align-self: flex-end; /* botão fica alinhado à direita dentro do form */
+    }
+    .formInputDiv button:hover {
+      background: #45a049;
+    }
+  </style>
+  <script>
+    let ws;
+    window.onload = function() {
+      ws = new WebSocket('ws://' + location.hostname + ':81/');
+      ws.onopen = function() {
+        document.getElementById('status').innerText = "Conectado!";
+        ws.send(JSON.stringify({ FormID: "WifiConfigForm", action: "load_form" }));        
+      };
+      ws.onmessage = function(event) {
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch {
+          document.getElementById('status').innerText = event.data;
+          return;
+        }
+        if (Array.isArray(data)) {
+          renderComponents(data);
+        }
+      };
+      ws.onclose = function() {
+        document.getElementById('status').innerText = "Desconectado!";
+      };
+    };
+
+    function renderComponents(componentList) {
+      const container = document.getElementById('btnContainer');
+      container.innerHTML = '';
+      componentList.forEach(component => {
+        let el;
+        if (component.type === "formInput") el = createFormWifiConfig(component);        
+        if (el) container.appendChild(el);
+      });
+    }
+
+    function createFormWifiConfig(component) {
+      const div = document.createElement('div');
+      div.className = 'formInputDiv';
+
+      const lblIp = document.createElement('label');
+      lblIp.textContent = "IP:";
+      const inputIp = document.createElement('input');
+      inputIp.value = component.ipvalue; 
+      inputIp.type = "text";
+
+      const lblGateway = document.createElement('label');
+      lblGateway.textContent = "Gateway:";
+      const inputGateway = document.createElement('input');
+      inputGateway.value = component.gateway; 
+      inputGateway.type = "text";
+
+      const lblSubnetMask = document.createElement('label');
+      lblSubnetMask.textContent = "Subnet Mask:";
+      const inputSubnetMask = document.createElement('input');
+      inputSubnetMask.value = component.subnet; 
+      inputSubnetMask.type = "text";
+
+      const lblSSID = document.createElement('label');
+      lblSSID.textContent = "SSID:";
+      const inputSSID = document.createElement('input');
+      inputSSID.value = component.ssid; 
+      inputSSID.type = "text";
+      
+      const lblPass = document.createElement('label');
+      lblPass.textContent = "Pass:";
+      const inputPass = document.createElement('input');
+      inputPass.value = component.pass; 
+      inputPass.type = "text";
+
+      const okBtn = document.createElement('button');
+      okBtn.textContent = "OK";
+      okBtn.onclick = () => {
+        ws.send(JSON.stringify({
+          FormID: "WifiConfigForm",
+          action: "savewifiConfig",
+          ip: inputIp.value,
+          gateway: inputGateway.value,
+          subnet: inputSubnetMask.value,
+          pass: inputPass.value,
+          ssid: inputSSID.value           
+        }));
+      };
+
+      div.appendChild(lblIp);
+      div.appendChild(inputIp);
+      div.appendChild(lblGateway);
+      div.appendChild(inputGateway);
+      div.appendChild(lblSubnetMask);
+      div.appendChild(inputSubnetMask);
+      div.appendChild(lblSSID);
+      div.appendChild(inputSSID);
+      div.appendChild(lblPass);
+      div.appendChild(inputPass);
+      div.appendChild(okBtn);
+
+      return div;
+    }
+  </script>
+</head>
+<body>
+  <h1>Automação Residencial</h1>
+  <div id="btnContainer"></div>
+  <p>Status: <span id="status">Conectando...</span></p>
+</body>
+</html>

@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8">
+  <title>Automação ESP32 WebSocket</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: sans-serif;
+      background: #f0f0f0;
+    }
+    #btnContainer {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      padding: 10px;
+    }
+    .formInputDiv {
+      display: flex;
+      flex-direction: column;
+      background: #fff;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      padding: 15px;
+      gap: 10px;
+      width: 100%;
+      max-width: 400px;
+    }
+    .formInputDiv label {
+      font-weight: bold;
+    }
+    .formInputDiv input {
+      padding: 8px;
+      font-size: 1em;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .formInputDiv button {
+      padding: 8px 15px;
+      font-size: 1em;
+      border: none;
+      border-radius: 6px;
+      background: #4CAF50;
+      color: white;
+      cursor: pointer;
+      align-self: flex-end; /* botão fica alinhado à direita dentro do form */
+    }
+    .formInputDiv button:hover {
+      background: #45a049;
+    }
+  </style>
+  <script>    
+    let ws;
+    const renderedComponents = {};
+    window.onload = function() {
+      ws = new WebSocket('ws://' + location.hostname + ':81/');
+      ws.onopen = function() {
+        document.getElementById('status').innerText = "Conectado!";        
+        ws.send(JSON.stringify({ FormID: "MainForm", action: "load_form" }));
+      };
+      ws.onmessage = function(event) {
+        console.log("Recebido via WebSocket:", event.data);
+        let data;
+        try {
+          //document.getElementById('datarx:').innerText = event.data;
+          data = JSON.parse(event.data);
+        } catch {
+          document.getElementById('status').innerText = event.data;
+          return;
+        }
+        if (Array.isArray(data)) {
+          renderComponents(data);
+        }
+      };
+      ws.onclose = function() {
+        document.getElementById('status').innerText = "Desconectado!";
+      };
+    };
+
+    function renderComponents(componentList) {
+      const container = document.getElementById('btnContainer');
+
+      componentList.forEach(component => {
+        if (renderedComponents[component.name]) {          
+          updateLampControl(component);
+        } else {          
+          const el = createLampControl(component);
+          container.appendChild(el);
+          renderedComponents[component.name] = el;
+        }
+      });
+    }
+
+    function createLampControl(component) {
+      const div = document.createElement('div');
+      div.className = 'formInputDiv';
+
+      // Ícone da lâmpada
+      const lampImg = document.createElement('img');
+      lampImg.setAttribute('data-lamp-name', component.name);
+      lampImg.src = component.value === "100" ? "lighton.png" : "lightoff.png";
+      lampImg.alt = component.name;
+      lampImg.style.width = "50px";
+      lampImg.style.alignSelf = "center";
+
+      // Nome da lâmpada
+      const lblName = document.createElement('label');
+      lblName.textContent = component.name || "Lâmpada";
+
+      // Botões ON/OFF
+      const btnOn = document.createElement('button');
+      btnOn.textContent = "ON";
+      btnOn.style.background = "#2196F3";
+      btnOn.onclick = () => {        
+        ws.send(JSON.stringify({
+          FormID: "MainForm",
+          action: "lamp_action",
+          name: component.name,
+          value: "100"
+        }));
+      };
+
+      const btnOff = document.createElement('button');
+      btnOff.textContent = "OFF";
+      btnOff.style.background = "#f44336";
+      btnOff.onclick = () => {        
+        ws.send(JSON.stringify({
+          FormID: "MainForm",
+          action: "lamp_action",
+          name: component.name,
+          value: "0"
+        }));
+      };
+
+      // Agrupando botões
+      const btnGroup = document.createElement('div');
+      btnGroup.style.display = "flex";
+      btnGroup.style.justifyContent = "space-between";
+      btnGroup.appendChild(btnOn);
+      btnGroup.appendChild(btnOff);
+
+      div.appendChild(lampImg);
+      div.appendChild(lblName);
+      div.appendChild(btnGroup);
+
+      return div;
+    }
+
+    function updateLampControl(component) {
+      console.log("updateLampControl():", component);
+      const div = renderedComponents[component.name];
+      if (!div) return;      
+      const lampImg = div.querySelector(`img[data-lamp-name="${component.name}"]`);
+      if (lampImg) {        
+        lampImg.src = component.value === "100" ? "lighton.png" : "lightoff.png";
+      }
+    }  
+      
+  </script>
+</head>
+<body>
+  <h1>Automação Residencial</h1>
+  <div id="btnContainer"></div>
+  <p>Status: <span id="status">Conectando...</span></p>
+</body>
+</html>
