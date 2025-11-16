@@ -1,4 +1,5 @@
 #include "main_navigator_form.h"
+#include <iostream>
 
 MainNavigatorForm::MainNavigatorForm(UI &ui, DataPersistence &dataPersistence) : ui_(ui), dataPersistence_(dataPersistence)
 {
@@ -15,16 +16,18 @@ void MainNavigatorForm::RegiterDeviceCallback(std::string deviceName, DeviceCall
     deviceCallBack[deviceName] = callback;
 }
 
+void MainNavigatorForm::RegiterDeviceUpdateCb(std::string deviceName, DeviceUpdateCb callback)
+{    
+    deviceUpdateCb[deviceName] = callback;
+}
+
 void MainNavigatorForm::MainFormCallback(const std::unordered_map<std::string,std::string>& data, uint8_t num)
 {    
+    num_= num;
     if(data.find("action") != data.end()){
-
         std::string action = data.at("action");
-        if(action == "load_form"){
-            Serial.println("load_form");
-            response_buffer_.clear();
-            DrawLampDevices();            
-            ui_.SendData("MainForm",response_buffer_, num);
+        if(action == "load_form"){        
+            DrawScreenEntities(); 
         }
         else if(action == "lamp_action"){ 
             auto it = deviceCallBack.find("lamps");
@@ -35,23 +38,20 @@ void MainNavigatorForm::MainFormCallback(const std::unordered_map<std::string,st
     }
 }
 
-void MainNavigatorForm::DrawLampDevices(){    
-    std::vector<std::string> lamps;
-    dataPersistence_.ReadDocument("lamp");
-    if (dataPersistence_.GetEntry("lamps", lamps)) {
-        for (const auto &lamp : lamps) {
-            std::string lampfile = "lamp_device_" + lamp;
-            dataPersistence_.ReadDocument(lampfile);
-            std::string value;
-            if(dataPersistence_.GetEntry("value", value)){
-                Serial.println(value.c_str());
-                response_buffer_.push_back({{"type", "lampControl"},{"value",value},{"name",lamp}});
-            }
-            else{
-                Serial.println("Error reading lamp value");
-            }               
+void MainNavigatorForm::DrawScreenEntities(){    
+    for(const auto &it : deviceUpdateCb){
+        std::string deviceType = it.first;
+        auto itNames = registeredDevicenameList_.find(deviceType);
+        if(itNames == registeredDevicenameList_.end()){
+            continue;
         }
-    }
+        for (auto deviceName : itNames->second) {
+            response_buffer_.clear();
+            std::unordered_map<std::string,std::string> deviceData = it.second(deviceName);
+            response_buffer_.push_back(deviceData);
+            ui_.SendData("MainForm",response_buffer_, num_);
+        }         
+    }    
 }
 
 void MainNavigatorForm::SendFormUpdate()
@@ -60,7 +60,8 @@ void MainNavigatorForm::SendFormUpdate()
     response_buffer_.clear(); 
 }
 
-void MainNavigatorForm::UpdateDevice(const std::string &deviceType, std::unordered_map<std::string,std::string>& data)
-{
 
+void MainNavigatorForm::RegisterDeviceNameList(std::string deviceType, std::vector<std::string> &deviceNames)
+{
+    registeredDevicenameList_[deviceType] = deviceNames;    
 }

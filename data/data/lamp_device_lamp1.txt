@@ -1,6 +1,10 @@
-value
-100
 lampport
 27
+lampinvert
+1
 switchport
 26
+switchinvert
+1
+timer
+5
