@@ -2,10 +2,11 @@
 
 #include "main_navigator_form.h"
 #include "data_persistence.h"
+#include "command.h"
 
 class Lamps {
 public:
-    Lamps(MainNavigatorForm &mainNavigatorForm, DataPersistence &dataPersistence);  
+    Lamps(MainNavigatorForm &mainNavigatorForm, DataPersistence &dataPersistence, Command& commandProcessor);  
     void TaskRefresh();
     
 private:
@@ -23,10 +24,13 @@ private:
     MainNavigatorForm &mainNavigatorForm_;
     DataPersistence &dataPersistence_;
     std::unordered_map<std::string,std::string> lampData_;
+    Command& commandProcessor_;
     std::vector<std::string> lampNameList;
     void LoadLampsFromPersistence();
     void SaveLampsToPersistence();    
     void LampActionCallback(const std::unordered_map<std::string,std::string>& data);
+    std::string LampCommandCallback(const std::unordered_map<std::string,std::string>& data);
+    bool UpdateLampConfig(const std::string& lampName, const std::unordered_map<std::string,std::string>& data, std::string& response);
     std::unordered_map<std::string,std::string>& LampUpdateCb(std::string deviceName);
     void UpdateLampStatus(int pin, int value, int lampInvert); 
     void GetSwitchStatus(int pin, int &value, int switchInvert);

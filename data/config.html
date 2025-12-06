@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<style>
+  body { font-family: sans-serif; background: #f0f0f0; padding: 20px; }
+  #box { background: #fff; padding: 15px; border-radius: 8px; max-width: 90%; }
+  label { font-weight: bold; }
+  input, button { width: 80%; padding: 8px; margin-top: 8px; }
+  button { background: #4CAF50; border: none; color: #fff; cursor: pointer; }
+  button:hover { background: #45a049; }
+  #resposta { margin-top: 15px; font-weight: bold; }
+</style>
+
+<script>
+let ws;
+
+window.onload = function() {
+  ws = new WebSocket("ws://" + location.hostname + ":81/");
+
+  ws.onopen = () => {
+    document.getElementById("status").innerText = "Conectado!";
+  };
+
+  ws.onmessage = (event) => {
+    document.getElementById("resposta").innerText = "Resposta: " + event.data;
+  };
+
+  ws.onclose = () => {
+    document.getElementById("status").innerText = "Desconectado!";
+  };
+};
+
+function enviarComando() {
+  const cmd = document.getElementById("cmd").value;
+  if (cmd.trim() === "") return;
+  ws.send(JSON.stringify({ 
+    FormID: "ConfigForm",
+    action: "command",
+    comand: cmd }));
+}
+
+
+
+</script>
+</head>
+
+<body>
+<div id="box">
+  <label for="cmd">Comando:</label>
+  <input type="text" id="cmd" placeholder="Digite um comando...">
+
+  <button onclick="enviarComando()">Enviar</button>
+
+  <p id="resposta">Resposta: --</p>
+</div>
+
+<p>Status: <span id="status">Conectando...</span></p>
+
+</body>
+</html>

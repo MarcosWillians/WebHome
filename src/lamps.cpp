@@ -2,7 +2,7 @@
 #include "lamps.h"
 #include <iostream>
 
-Lamps::Lamps(MainNavigatorForm &mainNavigatorForm, DataPersistence &dataPersistence) : mainNavigatorForm_(mainNavigatorForm), dataPersistence_(dataPersistence)
+Lamps::Lamps(MainNavigatorForm &mainNavigatorForm, DataPersistence &dataPersistence, Command& commandProcessor) : mainNavigatorForm_(mainNavigatorForm), dataPersistence_(dataPersistence), commandProcessor_(commandProcessor) 
 {    
     MainNavigatorForm::DeviceCallback lampCallback = [this](const std::unordered_map<std::string,std::string>& data) {
         this->LampActionCallback(data);
@@ -16,7 +16,103 @@ Lamps::Lamps(MainNavigatorForm &mainNavigatorForm, DataPersistence &dataPersiste
     };
     mainNavigatorForm_.RegiterDeviceUpdateCb("lamps", lampUpdateCb);
     mainNavigatorForm_.RegisterDeviceNameList("lamps", lampNameList);
+
+    Command::CommandCallback cmdCb = [this](const std::unordered_map<std::string,std::string>& data) -> std::string {
+        std::string response;
+        response = LampCommandCallback(data);
+        return response;
+    };
+    commandProcessor_.RegisterCommandCallBack("lamp", cmdCb);
+
 }
+
+std::string Lamps::LampCommandCallback(const std::unordered_map<std::string,std::string>& data)
+{
+    std::string response = "Missing arguments. Please insert '-addlamp' to add a new lamp device.\n";
+   
+    if (data.find("addlamp") != data.end()){
+        std::vector<std::string> lamps;
+        dataPersistence_.ReadDocument("lamp");
+        if (dataPersistence_.GetEntry("lamps", lamps)) {        
+            std::string lampsearch = data.at("addlamp");
+            for (const auto &lamp : lamps) {
+                if (lamp == lampsearch ){                
+                    response = "Device already exists. Please use '-updatelamp' to update the device configuration.\n";
+                    return response;
+                }
+            }
+            lamps.push_back(lampsearch);
+            dataPersistence_.AddOrUpdateEntry("lamps", lamps);
+            dataPersistence_.SaveDocument();  
+
+            std::string lampfile = "lamp_device_" + lampsearch;
+            dataPersistence_.CreateDocument(lampfile);                     
+            if (UpdateLampConfig(lampsearch, data, response)) {                
+                dataPersistence_.SaveDocument();                
+            }  
+        }
+    }
+    else if (data.find("updatelamp") != data.end()){
+        std::string lampsearch = data.at("updatelamp");
+        UpdateLampConfig(lampsearch, data, response);        
+    }
+
+    return response;
+}
+
+bool Lamps::UpdateLampConfig(const std::string& lampName, const std::unordered_map<std::string,std::string>& data, std::string& response)
+{
+  
+    std::string lampfile = "lamp_device_" + lampName;            
+    if (!dataPersistence_.ReadDocument(lampfile)) {
+        response = "Device not found.";
+        return false;
+    }
+
+    for (const auto& kv : data) {
+        dataPersistence_.AddOrUpdateEntry(kv.first, kv.second);       
+    }
+
+    bool retGet;
+    std::string lampPort;
+    retGet = dataPersistence_.GetEntry("lampport", lampPort);
+    if(!retGet || lampPort.empty()){
+        response = "Missing '-lampport' configuration.\n";
+        return false;
+    }
+
+    std::string lampInvert;
+    retGet = dataPersistence_.GetEntry("lampinvert", lampInvert);
+    if(!retGet || lampInvert.empty()){
+        response = "Missing '-lampinvert' configuration.\n";
+        return false;
+    }
+
+    std::string switchPort;
+    retGet = dataPersistence_.GetEntry("switchport", switchPort);
+    if(!retGet || switchPort.empty()){
+        response = "Missing '-switchport' configuration.\n";
+        return false;
+    }
+
+    std::string switchInvert;
+    retGet = dataPersistence_.GetEntry("switchinvert", switchInvert);
+    if(!retGet || switchInvert.empty()){
+        response = "Missing '-switchinvert' configuration.\n";
+        return false;
+    }
+
+    std::string timer;
+    retGet = dataPersistence_.GetEntry("timer", timer);
+    if(!retGet || timer.empty()){
+        dataPersistence_.AddOrUpdateEntry("timer", -1);
+    }
+
+    dataPersistence_.SaveDocument();
+    response = "Device configuration updated.";
+    return true;
+}
+
 
 void Lamps::LampActionCallback(const std::unordered_map<std::string,std::string>& data)
 {    

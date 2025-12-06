@@ -19,6 +19,7 @@ public:
     void HandleSocketEventCb(uint8_t num, WStype_t type, uint8_t * payload, size_t length);
     static void setInstance(UI* instance);       
     void SendData(const std::string formId, std::vector<std::unordered_map<std::string,std::string>> &data, uint8_t num);
+    void SendTxt(const std::string formId, std::string text, uint8_t num);
     void RegisterForm(FormInfo info);
 
 private:

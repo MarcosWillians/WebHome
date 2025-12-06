@@ -23,3 +23,12 @@ bool FsManager::fileExists(String path)
 {
     return LittleFS.exists(path);
 }
+
+bool FsManager::createFile(String path) {
+    File file = LittleFS.open(path, "w");   
+    if (!file) {        
+        return false;
+    }
+    file.close();   
+    return true;
+}

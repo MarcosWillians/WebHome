@@ -9,7 +9,7 @@
 class DataPersistence {
 public:       
     DataPersistence(FsManager &fsManager);
-    void ReadDocument(const std::string &document);
+    bool ReadDocument(const std::string &document);
     void AddOrUpdateEntry(const std::string &key, const std::string &value);
     void AddOrUpdateEntry(const std::string &key, int value);
     void AddOrUpdateEntry(const std::string &key, float value);
@@ -22,6 +22,7 @@ public:
     void DeleteEntry(const std::string &key);
     void DeleteAllEntries();
     void SaveDocument();
+    void CreateDocument(const std::string &document);
 private:
     FsManager &fsManager_;
     String filepath_; 

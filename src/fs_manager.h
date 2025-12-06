@@ -8,5 +8,6 @@ public:
     ~FsManager();
     File openFile(String path, const char* mode);
     void closeFile(File &file);
-    bool fileExists(String path);    
+    bool fileExists(String path);
+    bool createFile(String path);    
 };

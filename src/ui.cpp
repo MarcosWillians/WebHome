@@ -78,7 +78,14 @@ void UI::SendData(const std::string formId, std::vector<std::unordered_map<std::
     webSocketMgr_.sendTXT(num, jsonStr.c_str());   
 }
 
-
+void UI::SendTxt(const std::string formId, std::string text, uint8_t num)
+{
+    if(formId != currentFormId_){
+        Serial.println("FormID mismatch. Data not sent.");
+        return;
+    }
+    webSocketMgr_.sendTXT(num, text.c_str());   
+}
 
 void UI::RegisterForm(FormInfo info) 
 {    

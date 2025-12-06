@@ -1,2 +1,2 @@
 lamps
-lamp1,lamp2
+Quarto,Closed

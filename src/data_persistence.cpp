@@ -6,13 +6,12 @@ DataPersistence::DataPersistence(FsManager &fsManager) : fsManager_(fsManager)
 {
 }
     
-void DataPersistence::ReadDocument(const std::string &document)
+bool DataPersistence::ReadDocument(const std::string &document)
 {
     filepath_ = "/data/" + String(document.c_str()) + ".txt";
     File file = fsManager_.openFile(filepath_, "r+");
-    if (!file) {       
-        file = fsManager_.openFile(filepath_, "w+"); 
-        return;
+    if (!file) {
+        return false;
     }
     dataMap_.clear();
     std::string currentKey;    
@@ -29,6 +28,13 @@ void DataPersistence::ReadDocument(const std::string &document)
         }
     } 
     fsManager_.closeFile(file);
+    return true;
+}
+
+void DataPersistence::CreateDocument(const std::string &document)
+{
+    filepath_ = "/data/" + String(document.c_str()) + ".txt";
+    fsManager_.createFile(filepath_);    
 }
 
 void DataPersistence::AddOrUpdateEntry(const std::string &key, const std::string &value)

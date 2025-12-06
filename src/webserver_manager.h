@@ -9,11 +9,10 @@ class WebserverManager {
 public:    
     WebserverManager(int Port, FsManager &fsManager, wifiManager &wifiMgr);    
     void TaskRefresh();
-
+    WebServer server_;
 private:
     wifiManager &wifiMgr_;
-    FsManager &fsManager_;
-    WebServer server_;
+    FsManager &fsManager_;    
     bool handleFileRead(String path);
     String getContentType(String filename);
 };
